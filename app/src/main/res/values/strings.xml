@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">MeteoAppli</string>
+    <string name="retour">Retour</string>
+
+    <string-array name="countries">
+        <item></item>
+        <item>Afrique du Sud</item>
+        <item>Allemagne</item>
+        <item>Australie</item>
+        <item>Autriche</item>
+        <item>Belgique</item>
+        <item>Cameroun</item>
+        <item>Chine</item>
+        <item>Corée du Sud</item>
+        <item>Danemark</item>
+        <item>Egypte</item>
+        <item>Etats Unis d\'Amérique</item>
+        <item>France</item>
+        <item>Grèce</item>
+        <item>Indonésie</item>
+        <item>Japon</item>
+        <item>Maroc</item>
+        <item>Norvège</item>
+        <item>Pays-Bas</item>
+        <item>Royaume-Uni</item>
+        <item>Singapour</item>
+    </string-array>
+</resources>
