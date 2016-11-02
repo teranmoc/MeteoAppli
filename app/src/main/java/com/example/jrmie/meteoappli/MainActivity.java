@@ -3,6 +3,7 @@ package com.example.jrmie.meteoappli;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,14 +18,20 @@ import android.widget.Toast;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.text.SimpleDateFormat;
+//import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+//import java.util.Date;
 import java.util.List;
 
+/**
+ * TP2 - Application Météo
+ * Ajout de la base de données
+ */
 public class MainActivity extends AppCompatActivity {
     ListView cities;
     ArrayList<City> list;
+    CityManager cm;
+
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -42,13 +49,28 @@ public class MainActivity extends AppCompatActivity {
 
         this.cities = (ListView) findViewById(R.id.listViewCities);
 
-        // création de la liste
-        this.list = new ArrayList<City>();
-        this.list.add(new City("Chateaurenard", "France"));
-        this.list.add(new City("Dubai", "Emirats Arabes Unis"));
-        this.list.add(new City("Boston", "Etats Unis d'Amérique"));
-        this.refreshListView();
+        this.cm = new CityManager(this);
+        this.cm.open();         // ouverture de la base de données
 
+        // CECI EST TEMPORAIRE
+        /*cm.resetDatabase();
+        cm.addCity(new City("Chateaurenard", "France", "FR"));
+        cm.addCity(new City("Boston", "Etats Unis d'Amérique", "US"));
+        cm.addCity(new City("Londres", "Royaume Uni", "GB"));
+        cm.addCity(new City("Singapour", "Singapour", "SG"));//*/
+        // FIN CECI EST TEMPORAIRE
+        SharedPreferences sp = getBaseContext().getSharedPreferences("PREFS", MODE_PRIVATE);
+        //this.sp.edit().clear().commit();        // temporaire
+        if(!sp.contains("windUnit") || !sp.contains("windDirectionUnit") || !sp.contains("tempUnit")) {  // s'ils n'existent pas, on en crée par défaut
+            Log.v("DEBUG", "création des préférences utilisateurs");
+            sp.edit()
+                    .putInt("windUnit", 0)              // 0 : km/h
+                    .putInt("windDirectionUnit", 1)     // 1 : direction en degré
+                    .putInt("tempUnit", 0)              // 0 : degré Celcius
+                    .apply();
+        }
+        this.list = this.cm.getCitiesList();     // lecture de la base de données
+        this.refreshListView();
         AsyncTask<Void, Void, Void> t = new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {     // tâche de mise à jour des villes à l'ouverture
@@ -59,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 catch(Exception e) {
+                    Toast.makeText(MainActivity.this, "Erreur lors de la mise à jour à l'ouverture. Merci de retenter dans quelques instants. ", Toast.LENGTH_SHORT).show();
                     Log.v("DEBUG", "Catch - Mise à jour à l'ouverture\ne : " + e.toString());
                     e.printStackTrace();
                 }
@@ -94,14 +117,17 @@ public class MainActivity extends AppCompatActivity {
                 alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Supprimer",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                // suppression dans la BDD
-
-                                // suppression dans la list view
                                 City c = MainActivity.this.list.get(position);
-                                MainActivity.this.list.remove(position);
-                                MainActivity.this.refreshListView();     // refresh de la listview
-                                Toast.makeText(MainActivity.this, "La ville " + c.getName() + " a été supprimée de l'application", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
+
+                                int v = MainActivity.this.cm.deleteCity(c); // suppression dans la BDD
+                                if(v > 0) {         // suppression dans la list view
+                                    MainActivity.this.list.remove(position);
+                                    MainActivity.this.refreshListView();     // refresh de la listview
+                                    Toast.makeText(MainActivity.this, "La ville " + c.getName() + " a été supprimée de l'application", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                }
+
+
                             }
                         }
                 );
@@ -126,9 +152,10 @@ public class MainActivity extends AppCompatActivity {
     //gère le clic sur une action de l'ActionBar
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent i = null;
         switch (item.getItemId()){
             case R.id.plus:     // Ajout d'une ville => démarrage de l'activité d'ajout
-                Intent i = new Intent(MainActivity.this, AddCityActivity.class);
+                i = new Intent(MainActivity.this, AddCityActivity.class);
                 startActivityForResult(i, 2);
                 return true;
             case R.id.refresh:  // Rafraichissement de toutes les villes via le WS
@@ -157,6 +184,11 @@ public class MainActivity extends AppCompatActivity {
                 this.refreshListView();     // refresh de la listview
 
                 return true;
+            case R.id.setting:
+                Log.v("DEBUG", "Appel de la fenetre de config");
+                i = new Intent(MainActivity.this, SettingActivity.class);
+                startActivityForResult(i, 4);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -167,9 +199,9 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode == 2) {   // le bouton Sauvegarde a été actionné et les deux champs sont renseignés
-            City newCity = new City(data.getStringExtra("name"), data.getStringExtra("country"));
+            City newCity = new City(data.getStringExtra("name"), data.getStringExtra("country"), data.getStringExtra("iso"));
             // sauvegarde dans la BDD
-
+            MainActivity.this.cm.addCity(newCity);
             this.list.add(newCity);     // puis sauvegarde dans l'arraylist
             AsyncTask<Void, Void, Void> t = new AsyncTask<Void, Void, Void>() {
                 @Override
@@ -195,8 +227,11 @@ public class MainActivity extends AppCompatActivity {
                 int pos = data.getIntExtra("position", 0);
                 this.list.set(pos, receive);
 
-                // sauvegarde en BDD
+                this.cm.updateCity(receive);        // mise à jour de la ville en base de données
             }
+        }
+        else {
+            Log.v("DEBUG", "resultCode : " + resultCode);
         }
         this.refreshListView();     // refresh de la listview
     }
@@ -207,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void refreshListView()
     {
+
         ArrayAdapter<City> adc =
                 new ArrayAdapter<City>(this, android.R.layout.simple_list_item_1, this.list);
 
@@ -214,15 +250,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Rafraichit l'objet ville indiqué par sa position dans sa liste.
+     * Rafraichit l'objet ville et en BDD indiqué par sa position dans sa liste.
      * Soulève une exception si erreur
      * @param position
      */
     private void refreshCity(int position) throws Exception {
         String url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22" +
                 MainActivity.this.list.get(position).getName().replace(" ", "%20") + "%2C%20" +
-                MainActivity.this.list.get(position).getCountry().replace(" ", "%20") + "%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+                MainActivity.this.list.get(position).getIso() + "%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
 
+        Log.v("DEBUG", url);
         InputStream is = new URL(url).openStream();
         // lecture de l'objet JSON
         JSONResponseHandler js = new JSONResponseHandler();
@@ -236,11 +273,14 @@ public class MainActivity extends AppCompatActivity {
         // température
         MainActivity.this.list.get(position).setOutsiteTemp(Integer.parseInt(l.get(1)));
 
-        // pression
+        // pression atmosphérique
         MainActivity.this.list.get(position).setPressure(Float.parseFloat(l.get(2)));
 
         // date et heure de mise à jour
-        SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
-        MainActivity.this.list.get(position).setLastUpdate(f.format(new Date()));
+        long ts = System.currentTimeMillis() / 1000;
+        MainActivity.this.list.get(position).setLastUpdate(ts);
+
+        // on met à jour la ville dans la base de données
+        MainActivity.this.cm.updateCity(MainActivity.this.list.get(position));
     }
 }

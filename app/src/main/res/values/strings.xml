@@ -25,4 +25,45 @@
         <item>Royaume-Uni</item>
         <item>Singapour</item>
     </string-array>
+    <string-array name="countriesValues">
+        <item></item>
+        <item>ZA</item>
+        <item>DE</item>
+        <item>AU</item>
+        <item>AT</item>
+        <item>BE</item>
+        <item>CM</item>
+        <item>CN</item>
+        <item>KR</item>
+        <item>DK</item>
+        <item>EG</item>
+        <item>US</item>
+        <item>FR</item>
+        <item>GR</item>
+        <item>ID</item>
+        <item>JP</item>
+        <item>MA</item>
+        <item>NO</item>
+        <item>NL</item>
+        <item>GB</item>
+        <item>SG</item>
+    </string-array>
+    <string-array name="windUnit">
+        <item>km/h</item>
+        <item>mp/h</item>
+    </string-array>
+
+    <string-array name="windDirectionUnit">
+        <item>Points cardinaux</item>
+        <item>Degré</item>
+    </string-array>
+
+    <string-array name="tempUnit">
+        <item>Celcius</item>
+        <item>Fahrenheit</item>
+    </string-array>
+    <string-array name="tempUnitSymbol">
+        <item>C</item>
+        <item>F</item>
+    </string-array>
 </resources>

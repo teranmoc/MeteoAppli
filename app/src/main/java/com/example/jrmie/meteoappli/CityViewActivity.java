@@ -1,6 +1,7 @@
 package com.example.jrmie.meteoappli;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -93,9 +94,8 @@ public class CityViewActivity extends AppCompatActivity {
                             CityViewActivity.this.receive.setPressure(Float.parseFloat(l.get(2)));
 
                             // date et heure de mise à jour
-                            SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy à HH:mm:ss");
-                            String now = f.format(new Date());
-                            CityViewActivity.this.receive.setLastUpdate(now);
+                            long ts = System.currentTimeMillis() / 1000;
+                            CityViewActivity.this.receive.setLastUpdate(ts);
                         }
                         catch(Exception e) {
                             Log.v("DEBUG", "Catch city view refresh : \ne : " + e.toString());
@@ -121,12 +121,44 @@ public class CityViewActivity extends AppCompatActivity {
      * Met à jour les valeurs sur le layout de la visualisation d'une ville
      */
     private void setValuesInterface() {
+        // TP2 - Lecture des préférences utilisateurs pour les unités
+        SharedPreferences sp = getBaseContext().getSharedPreferences("PREFS", MODE_PRIVATE);
+        String[] windUnit = getResources().getStringArray(R.array.windUnit);
+        String[] tempUnit = getResources().getStringArray(R.array.tempUnitSymbol);
+
+        // Vitesse du vent
+        String lblWind = windUnit[sp.getInt("windUnit", -1)];
+        float wind = CityViewActivity.this.receive.getWindSpeed();
+        if(sp.getInt("windUnit", -1) == 1) {        // par défaut, la vitesse est en km/h donc il faut convertir la vitesse en mph si demandé
+            wind *= 0.621371;
+        }
+
+        // Direction du vent
+        String wd = CityViewActivity.this.receive.getWindDirection();
+        if(sp.getInt("windDirectionUnit", -1) == 0) {   // par défaut, la direction est exprimé en degré donc il faut convertir en point cardinaux si demandé
+            wd = this.deg2compass(wd);
+        }
+        else {
+            wd += " °";
+        }
+
+        // Température
+        String lblTemp = tempUnit[sp.getInt("tempUnit", -1)];
+        double temp = CityViewActivity.this.receive.getOutsiteTemp();
+        if(sp.getInt("tempUnit", -1) == 1) {    // par défaut, la température est exprimé en degré Celcius, il faut donc la convertir en degré Fahrenheit si demandé
+            temp = (temp * 1.8) + 32;
+        }
+
         CityViewActivity.this.textCity.setText(CityViewActivity.this.receive.getName());
         CityViewActivity.this.textCountry.setText(CityViewActivity.this.receive.getCountry());
-        CityViewActivity.this.textWind.setText(CityViewActivity.this.receive.getWindSpeed() + " km/h (" +
-                CityViewActivity.this.receive.getWindDirection() + ")");
-        CityViewActivity.this.textTemp.setText(CityViewActivity.this.receive.getOutsiteTemp() + " °C");
+        CityViewActivity.this.textWind.setText(String.format("%.2f", wind) + " " + lblWind + " (" + wd + ")");
+        CityViewActivity.this.textTemp.setText(temp + " °" + lblTemp);
         CityViewActivity.this.textPressure.setText(CityViewActivity.this.receive.getPressure() + " hPa");
         CityViewActivity.this.textMaj.setText(CityViewActivity.this.receive.getLastUpdate().toString());
+    }
+    private String deg2compass(String deg) {
+        String[] arrComp = {"N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
+        int val = (int)((Double.parseDouble(deg)/22.5)+.5);
+        return arrComp[val % 16];
     }
 }

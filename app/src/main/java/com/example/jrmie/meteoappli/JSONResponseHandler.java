@@ -16,7 +16,9 @@ import java.util.List;
  * query.yahooapis.com/v1/public/yql
  * Responses must be provided in JSON.
  *
+ * Modifié par Jérémie Décome pour la configuration de l'application
  * @author Stephane Huet
+ * @author Jérémie Décome
  *
  */
 
@@ -111,7 +113,7 @@ public class JSONResponseHandler {
         while (reader.hasNext()) {
             String name = reader.nextName();
             if (name.equals("direction")) {
-                dirWind = deg2compass(reader.nextString());
+                dirWind = reader.nextString();
             } else if (name.equals("speed")) {
                 speedWind = mph2kmh(reader.nextString());
             } else {
@@ -126,9 +128,10 @@ public class JSONResponseHandler {
         return String.valueOf((int) (Integer.parseInt(n)/1.609344));
     }
     private String deg2compass(String deg) {
-        String[] arrComp = {"N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
+        return deg;
+        /*String[] arrComp = {"N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
         int val = (int)((Double.parseDouble(deg)/22.5)+.5);
-        return arrComp[val % 16];
+        return arrComp[val % 16];//*/
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
