@@ -14,6 +14,7 @@
         <item>Corée du Sud</item>
         <item>Danemark</item>
         <item>Egypte</item>
+        <item>Espagne</item>
         <item>Etats Unis d\'Amérique</item>
         <item>France</item>
         <item>Grèce</item>
@@ -24,6 +25,7 @@
         <item>Pays-Bas</item>
         <item>Royaume-Uni</item>
         <item>Singapour</item>
+        <item>Suisse</item>
     </string-array>
     <string-array name="countriesValues">
         <item></item>
@@ -37,6 +39,7 @@
         <item>KR</item>
         <item>DK</item>
         <item>EG</item>
+        <item>ES</item>
         <item>US</item>
         <item>FR</item>
         <item>GR</item>
@@ -47,10 +50,11 @@
         <item>NL</item>
         <item>GB</item>
         <item>SG</item>
+        <item>CH</item>
     </string-array>
     <string-array name="windUnit">
         <item>km/h</item>
-        <item>mp/h</item>
+        <item>mph</item>
     </string-array>
 
     <string-array name="windDirectionUnit">

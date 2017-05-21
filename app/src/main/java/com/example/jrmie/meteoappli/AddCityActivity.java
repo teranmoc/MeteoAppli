@@ -3,7 +3,6 @@ package com.example.jrmie.meteoappli;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,12 +39,9 @@ public class AddCityActivity extends AppCompatActivity {
         return true;
     }
 
-
-
     //gère le clic sur une action de l'ActionBar
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         switch (item.getItemId()) {
             case R.id.save_city:     // Sauvegarde d'une ville
                 this.save();
@@ -61,7 +57,6 @@ public class AddCityActivity extends AppCompatActivity {
     private void save() {
         String name = this.editCity.getText().toString();
         String country = this.countriesList.getSelectedItem().toString();
-        Log.v("DEBUG", "Code pays avant save : " + this.iso);
         if(!name.isEmpty() && !this.iso.isEmpty()) {
             Intent i;
             i = new Intent(getApplicationContext(), AddCityActivity.class);

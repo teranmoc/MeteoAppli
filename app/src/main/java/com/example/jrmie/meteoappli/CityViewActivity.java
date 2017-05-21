@@ -1,7 +1,10 @@
 package com.example.jrmie.meteoappli;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -67,35 +70,48 @@ public class CityViewActivity extends AppCompatActivity {
                 }
                 CityViewActivity.this.finish();
                 return true;
-            case R.id.refresh_city: // appel webservice pour mise à jour de cette ville, et insertion dans l'objet
+            case R.id.refresh_city:         // appel webservice pour mise à jour de cette ville, et insertion dans l'objet
                 AsyncTask<Void, Void, Void> t = new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... params) {
                         try {
-                            String url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22" +
-                                    CityViewActivity.this.receive.getName().replace(" ", "%20") + "%2C%20" +
-                                    CityViewActivity.this.receive.getCountry().replace(" ", "%20") + "%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+                            ConnectivityManager cnm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                            NetworkInfo ni = cnm.getActiveNetworkInfo();
+                            if((ni != null) && (ni.isConnected())) {        // il y a une connectivité, on affiche les données du webservice et on met à jour la BDD
+                                String url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22" +
+                                        CityViewActivity.this.receive.getName().replace(" ", "%20") + "%2C%20" +
+                                        CityViewActivity.this.receive.getIso() + "%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
 
-                            InputStream is = new URL(url).openStream();
+                                InputStream is = new URL(url).openStream();
 
-                            // lecture de l'objet JSON
-                            JSONResponseHandler js = new JSONResponseHandler();
-                            List<String> l = js.handleResponse(is, "UTF-8");
+                                // lecture de l'objet JSON
+                                JSONResponseHandler js = new JSONResponseHandler();
+                                List<String> l = js.handleResponse(is, "UTF-8");
 
-                            // traitement du vent
-                            String[] wind = l.get(0).split(" ");
-                            CityViewActivity.this.receive.setWindSpeed(Float.parseFloat(wind[0]));
-                            CityViewActivity.this.receive.setWindDirection(wind[1].substring(1, wind[1].length() - 1));
+                                // traitement du vent
+                                String[] wind = l.get(0).split(" ");
+                                CityViewActivity.this.receive.setWindSpeed(Float.parseFloat(wind[0]));
+                                CityViewActivity.this.receive.setWindDirection(wind[1].substring(1, wind[1].length() - 1));
+                                CityViewActivity.this.receive.setOutsiteTemp(Integer.parseInt(l.get(1)));       // température
+                                CityViewActivity.this.receive.setPressure(Float.parseFloat(l.get(2)));          // pression
 
-                            // température
-                            CityViewActivity.this.receive.setOutsiteTemp(Integer.parseInt(l.get(1)));
+                                // date et heure de mise à jour
+                                CityViewActivity.this.receive.setLastUpdate(System.currentTimeMillis());
+                            }
+                            else {          // Pas de connectivité, on remonte les dernières valeurs de la base de données
+                                CityManager cm = new CityManager(CityViewActivity.this);
+                                City c = cm.getCityByNameAndIso(CityViewActivity.this.receive.getName(), CityViewActivity.this.receive.getIso());   // cityList contient d'anciennes valeurs et est présent dans la liste
 
-                            // pression
-                            CityViewActivity.this.receive.setPressure(Float.parseFloat(l.get(2)));
+                                // traitement du vent
+                                CityViewActivity.this.receive.setWindSpeed(c.getWindSpeed());
+                                CityViewActivity.this.receive.setWindDirection(c.getWindDirection());
+                                CityViewActivity.this.receive.setOutsiteTemp(c.getOutsiteTemp());       // température
+                                CityViewActivity.this.receive.setPressure(c.getPressure());             // pression atmosphérique
 
-                            // date et heure de mise à jour
-                            long ts = System.currentTimeMillis() / 1000;
-                            CityViewActivity.this.receive.setLastUpdate(ts);
+                                // date et heure de mise à jour
+                                String ts = c.getLastUpdate(false);
+                                CityViewActivity.this.receive.setLastUpdate(Long.valueOf(ts));
+                            }
                         }
                         catch(Exception e) {
                             Log.v("DEBUG", "Catch city view refresh : \ne : " + e.toString());
@@ -120,8 +136,7 @@ public class CityViewActivity extends AppCompatActivity {
     /**
      * Met à jour les valeurs sur le layout de la visualisation d'une ville
      */
-    private void setValuesInterface() {
-        // TP2 - Lecture des préférences utilisateurs pour les unités
+    private void setValuesInterface() {     // TP2 - Lecture des préférences utilisateurs pour les unités
         SharedPreferences sp = getBaseContext().getSharedPreferences("PREFS", MODE_PRIVATE);
         String[] windUnit = getResources().getStringArray(R.array.windUnit);
         String[] tempUnit = getResources().getStringArray(R.array.tempUnitSymbol);
@@ -130,7 +145,7 @@ public class CityViewActivity extends AppCompatActivity {
         String lblWind = windUnit[sp.getInt("windUnit", -1)];
         float wind = CityViewActivity.this.receive.getWindSpeed();
         if(sp.getInt("windUnit", -1) == 1) {        // par défaut, la vitesse est en km/h donc il faut convertir la vitesse en mph si demandé
-            wind *= 0.621371;
+            wind *= 0.621371;       // 1 km/h = 0,621371 mph
         }
 
         // Direction du vent
@@ -152,10 +167,13 @@ public class CityViewActivity extends AppCompatActivity {
         CityViewActivity.this.textCity.setText(CityViewActivity.this.receive.getName());
         CityViewActivity.this.textCountry.setText(CityViewActivity.this.receive.getCountry());
         CityViewActivity.this.textWind.setText(String.format("%.2f", wind) + " " + lblWind + " (" + wd + ")");
-        CityViewActivity.this.textTemp.setText(temp + " °" + lblTemp);
+        CityViewActivity.this.textTemp.setText(String.format("%.2f", temp) + " °" + lblTemp);
         CityViewActivity.this.textPressure.setText(CityViewActivity.this.receive.getPressure() + " hPa");
-        CityViewActivity.this.textMaj.setText(CityViewActivity.this.receive.getLastUpdate().toString());
+        CityViewActivity.this.textMaj.setText(CityViewActivity.this.receive.getLastUpdate(true).toString());
     }
+    /**
+    Cette méthode est issue de la classe JSONResponseHandler
+     */
     private String deg2compass(String deg) {
         String[] arrComp = {"N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
         int val = (int)((Double.parseDouble(deg)/22.5)+.5);

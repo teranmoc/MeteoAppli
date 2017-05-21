@@ -7,7 +7,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 /**
- * Created by Jérémie on 12/10/2016.
+ * Created by Jérémie Décome on 12/10/2016.
+ * Interaction avec la base de donées SQLite
  */
 public class Database extends SQLiteOpenHelper {
     private static final String TABLE_NAME = "cities";
@@ -26,26 +27,25 @@ public class Database extends SQLiteOpenHelper {
             "`pressure` REAL, " +
             "UNIQUE (`" + CITY_NAME + "`,  `country`)" +
             ");";
-    private static final String CREATE_TABLE_2 = "CREATE TABLE IF NOT EXISTS `settings` (" +
-            "`variable` TEXT, " +
-            "`value` TEXT, " +
-            "PRIMARY KEY(`variable`)" +
-            ");";
     public Database(Context context, String name, CursorFactory factory, int version) {
         super(context, name, factory, version);
     }
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_TABLE_1);
-        //db.execSQL(CREATE_TABLE_2);
-        //db.execSQL("INSERT INTO settings(variable, value) VALUES('windUnit', 'km/h'), ('windDirectionUnit', 'degree'), ('tempUnit', 'celcius');");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.v("DEBUG", "Reset BDD");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME + ";");
-        //db.execSQL("DROP TABLE IF EXISTS settings;");
         onCreate(db);
+    }
+    public String getTableName()
+    {
+        return TABLE_NAME;
+    }
+    public String getPrimaryKey()
+    {
+        return PRIMARY_KEY;
     }
 }

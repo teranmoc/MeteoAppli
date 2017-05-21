@@ -1,22 +1,18 @@
 package com.example.jrmie.meteoappli;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 /**
- * Created by Jérémie on 26/10/2016.
+ * Created by Jérémie Décome on 26/10/2016.
  */
 public class SettingActivity extends AppCompatActivity {
     Spinner windUnit, windDirectionUnit, tempUnit;
-    //SettingsManager stm;
     SharedPreferences sp;
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -29,12 +25,6 @@ public class SettingActivity extends AppCompatActivity {
 
         // lecture des préférences utilisateurs
         this.sp = getBaseContext().getSharedPreferences("PREFS", MODE_PRIVATE);
-        int wu = this.sp.getInt("windUnit", -1);
-        int wdu = this.sp.getInt("windDirectionUnit", -1);
-        int tu = this.sp.getInt("tempUnit", -1);
-        Log.v("DEBUG", "wind unit : " + wu);
-        Log.v("DEBUG", "wind direction unit : " + wdu);
-        Log.v("DEBUG", "temp unit : " + tu);//*/
         this.windUnit.setSelection(this.sp.getInt("windUnit", -1));
         this.windDirectionUnit.setSelection(this.sp.getInt("windDirectionUnit", -1));
         this.tempUnit.setSelection(this.sp.getInt("tempUnit", -1));//*/
@@ -50,13 +40,6 @@ public class SettingActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.save_city:     // Sauvegarde
-                //Log.v("DEBUG", "Enregistre la config");
-                /*String wu = this.windUnit.getSelectedItem().toString();
-                String wd = this.windDirectionUnit.getSelectedItem().toString();
-                String t = this.tempUnit.getSelectedItem().toString();
-                Log.v("DEBUG", "wu : " + wu);
-                Log.v("DEBUG", "wdu : " + wd);
-                Log.v("DEBUG", "tu : " + t);//*/
                 // sauvegarde des unités
                 this.sp.edit()
                         .putInt("windUnit", this.windUnit.getSelectedItemPosition())

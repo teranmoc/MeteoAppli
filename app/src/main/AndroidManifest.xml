@@ -23,6 +23,9 @@
         </activity>
         <activity android:name="com.example.jrmie.meteoappli.SettingActivity">
         </activity>
+        <provider android:name="com.example.jrmie.meteoappli.WeatherProvider" android:authorities="com.example.jrmie.meteoappli.weatherProvider" >
+
+        </provider>
     </application>
 
 </manifest>
